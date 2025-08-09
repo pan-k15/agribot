@@ -10,7 +10,11 @@ def generate_launch_description():
         'urdf',
         'robot.urdf.xacro'
     )
-
+    rviz_config_path = os.path.join(
+    get_package_share_directory('rover_description'),
+    'config',
+    'view_config.rviz'
+    )
     return LaunchDescription([
         Node(
             package='robot_state_publisher',
@@ -32,13 +36,6 @@ def generate_launch_description():
             executable='rviz2',
             name='rviz2',
             output='screen',
-            arguments=['-d', os.path.join(
-                get_package_share_directory('rover_description'),
-                'config',
-                'view_config.rviz'  # Optional RViz config
-            )] if os.path.exists(os.path.join(
-                get_package_share_directory('rover_description'),
-                'rviz',
-                'view_config.rviz')) else []
+            arguments=['-d', rviz_config_path] if os.path.exists(rviz_config_path) else []
         )
     ])

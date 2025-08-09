@@ -270,61 +270,8 @@
         <material>Gazebo/Blue</material>
     </gazebo>
 
-    <!-- PL,ATFORM LINK -->
-
-    <joint name="platform_joint" type="fixed">
-        <parent link="base_link" />
-        <child link="platform" />
-        <origin xyz="0 0 ${(chassis_height)}" />
-    </joint>
-
-    <link name="platform">
-        <visual>
-            <origin xyz="${platform_length/2} 0 ${platform_height/2}" />
-            <geometry>
-                <box size="${platform_length} ${platform_width} ${platform_height}" />
-            </geometry>
-            <material name="pink" />
-        </visual>
-        <collision>
-            <origin xyz="${platform_length/2} 0 ${platform_height/2}" />
-            <geometry>
-                <box size="${platform_length} ${platform_width} ${platform_height}" />
-            </geometry>
-        </collision>
-        <xacro:inertial_box mass="0.5" x="${platform_length}" y="${platform_width}"
-            z="${platform_height}">
-            <origin xyz="${platform_length/2} 0 ${platform_height/2}" rpy="0 0 0" />
-        </xacro:inertial_box>
-    </link>
 
 
-    <!-- BODY LINK -->
-
-    <joint name="body_joint" type="fixed">
-        <parent link="base_link" />
-        <child link="body" />
-        <origin xyz="0.3 0 ${(chassis_height)}" />
-    </joint>
-
-    <link name="body">
-        <visual>
-            <origin xyz="${body_length/2} 0 ${body_height/2}" />
-            <geometry>
-                <box size="${body_length} ${body_width} ${body_height}" />
-            </geometry>
-            <material name="yellow" />
-        </visual>
-        <collision>
-            <origin xyz="${body_length/2} 0 ${body_height/2}" />
-            <geometry>
-                <box size="${body_length} ${body_width} ${body_height}" />
-            </geometry>
-        </collision>
-        <xacro:inertial_box mass="0.5" x="${body_length}" y="${body_width}" z="${body_height}">
-            <origin xyz="${body_length/2} 0 ${body_height/2}" rpy="0 0 0" />
-        </xacro:inertial_box>
-    </link>
     <gazebo>
         <plugin
         filename="gz-sim-diff-drive-system"
