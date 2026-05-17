@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="agribot_v2">
+
+    <xacro:arg name="sim_mode" default="false" />
+
+    <!-- Robot body: chassis, wheels, cargo bed + walls, body box, bumper -->
+    <xacro:include filename="main_v2.xacro" />
+
+    <!-- 2D LiDAR mounted on top of the body link -->
+    <xacro:include filename="lidar.xacro" />
+
+    <!-- Forward-facing camera mounted on the front of the body link -->
+    <xacro:include filename="depth_camera.xacro" />
+
+</robot>

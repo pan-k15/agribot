@@ -5,8 +5,7 @@ from launch.actions import (
     DeclareLaunchArgument, TimerAction
 )
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
-from launch_ros.substitutions import FindPackageShare
+from launch.substitutions import LaunchConfiguration
 from ament_index_python.packages import get_package_share_directory
 import os
 import xacro
@@ -15,15 +14,13 @@ def generate_launch_description():
     # === Paths ===
     ros_gz_sim_pkg_path = get_package_share_directory('ros_gz_sim')
     robot_description_pkg_path = get_package_share_directory('rover_description')
-    robot_simulation_pkg_path = FindPackageShare('world_simulation')
 
     gz_launch_path = os.path.join(ros_gz_sim_pkg_path, 'launch', 'gz_sim.launch.py')
     xacro_file = os.path.join(robot_description_pkg_path, 'urdf', 'robot_v2.urdf.xacro')
 
     # === Process Xacro ===
     doc = xacro.process_file(xacro_file)
-    robot_description_config = doc.toxml()
-    robot_description = {'robot_description': robot_description_config}
+    robot_description = {'robot_description': doc.toxml()}
 
     # === Launch arguments ===
     use_sim_time = LaunchConfiguration('use_sim_time')
@@ -42,9 +39,7 @@ def generate_launch_description():
         parameters=[robot_description, {'use_sim_time': use_sim_time}]
     )
 
-    # === Spawn robot at the hilltop ===
-    # Hilltop is at Y=+20 m, Z≈7.8 m.  We spawn at Y=16, Z=8.5 to land softly.
-    # -Y 3.14159 turns the robot to face downhill (toward Y=-20 / the valley).
+    # === Spawn robot at origin, wheels just above ground ===
     spawn_entity = Node(
         package='ros_gz_sim',
         executable='create',
@@ -52,14 +47,13 @@ def generate_launch_description():
             '-topic', 'robot_description',
             '-entity', 'robot',
             '-x', '0.0',
-            '-y', '16.0',
-            '-z', '8.5',
-            '-Y', '3.14159',
+            '-y', '0.0',
+            '-z', '0.15',
         ],
         output='screen',
     )
 
-    # === Gazebo bridge config ===
+    # === Gazebo bridge ===
     bridge_params = os.path.join(
         get_package_share_directory('world_simulation'),
         'config',
@@ -69,48 +63,21 @@ def generate_launch_description():
     start_gz_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
-        arguments=[
-            '--ros-args',
-            '-p', f'config_file:={bridge_params}',
-        ],
-        output='screen',
-    )
-
-    start_gz_image_bridge = Node(
-        package='ros_gz_image',
-        executable='image_bridge',
-        arguments=['/camera/image_raw'],
+        arguments=['--ros-args', '-p', f'config_file:={bridge_params}'],
         output='screen',
     )
 
     # === Launch description ===
     return LaunchDescription([
         use_sim_time_arg,
-        # GZ_SIM_RESOURCE_PATH lets Gazebo resolve:
-        #   model://hill_terrain  → models/hill_terrain/
-        #   hill_terrain/materials/textures/heightmap.png (heightmap URI in world SDF)
-        SetEnvironmentVariable(
-            'GZ_SIM_RESOURCE_PATH',
-            PathJoinSubstitution([robot_simulation_pkg_path, 'models'])
-        ),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(gz_launch_path),
             launch_arguments={
-                'gz_args': PathJoinSubstitution([
-                    FindPackageShare('world_simulation'),
-                    'worlds',
-                    'grass_world.sdf'
-                ]),
-                'on_exit_shutdown': 'true'
+                'gz_args': '-r empty.sdf',
+                'on_exit_shutdown': 'true',
             }.items(),
         ),
         robot_state_publisher,
         start_gz_bridge,
-        # Delay spawn by 5 s — Gazebo needs time to load the heightmap before
-        # the 'create' node can announce the world and accept spawn requests.
-        TimerAction(
-            period=5.0,
-            actions=[spawn_entity],
-        ),
-        #TimerAction(period=5.0, actions=[start_gz_image_bridge]),
+        TimerAction(period=3.0, actions=[spawn_entity]),
     ])
